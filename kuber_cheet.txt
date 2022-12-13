@@ -1,0 +1,2162 @@
+_Примеры yml_
+_Пример Pod yml_
+_Пример Pod env yml_
+_Пример pod с двумя контейнерами внутри и командами_
+_Пример init containers_
+_Пример Static_pod yml_
+_Пример pod маунтим volume_
+_Примеры replicacontroller_
+_Примеры replicaset_
+_Пример DaemonSets_
+_Пример Deployment_ 
+_Пример yml namespace_
+_Пример настройки limits_
+_Пример ClusterIP service_
+_Пример service NodePort_
+_Пример service LoadBalancer_
+_Пример Manual Scheduling_
+_Пример yaml taint tolerant_
+_Пример Node Affinity_
+_Пример scheduler yml_
+_Пример Rolling Recreate update_
+_Пример configMap yml_
+_Пример secret yml_
+
+
+_Imperative_commands_
+_Certification Tip!_шпаргалка_!!
+_Certification Tips - Imperative Commands with Kubectl_
+_A quick note on editing PODs and Deployments_
+
+
+_cluster_
+_nodes_
+_pods_
+_daemonset_
+_Static pods_
+_scheduler_
+_namespace_
+_kub_log_
+_rolling_recreate_update_
+_configMap_
+_secret_
+_maintenance_обслуживание_
+_Upgrading kubeadm clusters_
+_backup_
+_svc_
+
+
+
+_Примеры yml_
+
+
+_Пример Pod yml_
+1 Пример yml для Pod 
+apiVersion: v1      # указываем api версию тип  String
+kind: Pod
+metadata:                    
+  name: myapp-pod   # имя приложения, то что здесь это словарь    
+  labels:           # какой label используется это Dictionary поэтому отступ для app
+       app: myapp
+       type: front-end   # тип приложения указываем 
+
+spec:        # описание конкретного контейнера 
+  containers:  # list Array
+    - name: nginx-container   # имя контейнера - тире так как это первая позиция 
+      image: nginx            # сам образ 
+
+
+2 apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx       # дети metadata должно в одну линейку быть
+  labels:
+    app: nginx      # дети Labels поэтому должны быть в одном отступе у детей должны быть отступы 
+    tier: frontend
+spec: 
+  containers:
+    - name: nginx              # list словарь вначале черточка 
+      image: nginx
+    - name: busybox
+      image: busybox
+
+
+3 Пример запуска одно контейнера 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx       # дети metadata должно в одну линейку быть
+  labels:
+    app: nginx      # дети Labels поэтому должны быть в одном отступе
+    tier: frontend
+spec: 
+  containers:
+    - name: nginx
+      image: nginx
+
+
+4 Пример закрепления pod за конкретным node 
+# если в будущем захотим перезакрепить на другой node то надо редактировать yml файл и пересоздавать 
+yml pod 
+
+apiVersion: v1      # указываем api версию тип  String
+kind: Pod
+metadata:                    
+  name: nginx   # имя приложения, то что здесь это словарь    
+spec:        # описание конкретного контейнера
+  nodeName: node01  # мы закрепим за конкретной node конкретный pod !!!!!!!  
+  containers:  # list Array
+    - name: nginx   # имя контейнера - тире так как это первая позиция 
+      image: nginx            # сам образ 
+
+
+k replace --force -f nginx.yaml
+# удаляет предыдущий pod а потом пересоздает его        
+
+Пример закрепления pod за конкретным node   # без коментариев 
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  nodeName: node01
+  containers:
+  -  image: nginx
+     name: nginx
+
+k replace --force -f nginx.yaml
+# удаляет предыдущий pod а потом пересоздает его      
+
+###############################################################
+5 Пример создания pod и исполдьзования nodeSelector чтобы закрепить его за конкретной node 
+
+1 k label nodes node-1 size=Large 
+# пример конкретной команды 
+
+2 Теперь когда мы создаем pod он пойдет на node-1 так у него nodeSelector size large 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod       # дети metadata должно в одну линейку быть
+spec:
+  containers:
+    - name: data-processor 
+      image: data-processor
+  nodeSelector:
+      size: Large
+
+# k apply -f pod.yaml 
+# Теперь данный pod будет работать на node01 
+
+Итого
+1 мы создаем label на конкретной pod (size=Large )
+2 мы указываем в pod при создании его nodeSelector:
+      size: Large 
+
+
+6 1 пример pod в yaml формате  с командами и аргументами 
+apiVersion: v1
+kind: Pod 
+metadata:
+  name: ubuntu-sleeper-2
+spec:
+  containers:
+  - name: ubuntu
+    image: ubuntu
+    command: [ "sleep" ]
+    args: [ "5000" ]    
+
+2 второй пример pod в yaml формате  с командами и аргументами 
+apiVersion: v1  
+kind: Pod 
+metadata:
+  name: ubuntu-sleeper-3 
+spec:
+  containers:
+  - name: ubuntu
+    image: ubuntu
+    command:
+      - "sleep"
+      - "1200"
+##########################################################
+_Пример Pod env yml_
+1 docker run -e APP_COLOR=pink simple-webapp-color
+# в docker мы можем установить переменную
+
+2 в pods мы также можем пример ниже 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp-color
+spec:
+  containers:
+  - name: simple-webapp-color
+    image: simple-webapp-color
+    ports:
+      - containerPort: 8080
+    env:                      # переменная окружения 
+      - name: APP_COLOR       # словарь 
+        value: pink
+#######################################################
+
+3 способы установки переменных окружения 
+1
+env:
+  - name: APP_COLOR       # Plain Key Value  
+    value: pink
+2
+env:
+  - name: APP_COLOR       # ConfigMap   
+    valueFrom: 
+        configMapKeyRef:
+
+3 
+env:                      # Secrets 
+  - name: APP_COLOR
+    valueFrom:
+        secret
+
+###############################################################################
+_Пример pod с двумя контейнерами внутри и командами_
+1 k run yellow --image=busybox --dry-run=client -o yaml > yellow.yaml
+# создаем файл чтобы добавить контейнер еще 
+
+2 yellow.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: yellow
+  name: yellow
+spec:
+  containers:
+  - image: busybox           # первый контейнер
+    name: lemon
+    command: [ "sleep", "1000" ]      # команда sleep в lemon 1000 секунд 
+    resources: {}
+  - name: gold               # второй контейнер 
+    image: redis
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {} 
+###############################################################################
+_Пример init containers_
+
+
+1
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  containers:
+  - name: myapp-container
+    image: busybox:1.28
+    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:                                    # помни у данных контейнеров есть такой раздел initContainers и в нем описан сам контейнер и команды 
+  - name: init-myservice
+    image: busybox
+    command: ['sh', '-c', 'git clone <some-repository-that-will-be-used-by-application> ; done;']
+
+2 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  containers:
+  - name: myapp-container
+    image: busybox:1.28
+    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:                 # initContainer 
+  - name: init-myservice
+    image: busybox:1.28
+    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+  - name: init-mydb
+    image: busybox:1.28
+    command: ['sh', '-c', 'until nslookup mydb; do echo waiting for mydb; sleep 2; done;']
+
+
+
+
+###########################################################################
+_Пример Static_pod yml_
+
+1  Пример static pod 
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: static-busybox
+  name: static-busybox
+spec:
+  containers:
+  - command:
+    - sleep
+    - "1000"
+    image: busybox:1.28.4
+    name: static-busybox
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
+
+#####################################################################
+_Пример pod маунтим volume_
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2022-11-22T08:10:22Z"
+  labels:
+    name: app
+  name: app
+  namespace: elastic-stack
+  resourceVersion: "763"
+  uid: fd646f1b-896d-463a-8bd2-041d25d3ee3c
+spec:
+  containers:
+  - image: kodekloud/filebeat-configured       # образ 
+    name: sidecar                           # имя контейнера 
+    volumeMounts:
+    - mountPath: /var/log/event-simulator/    # маунтим к нему конкретную директорию 
+      name: log-volume                        # указываем имя маунта   
+  - image: kodekloud/event-simulator
+    imagePullPolicy: Always
+    name: app
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /log
+      name: log-volume
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-6cz8l
+      readOnly: true
+
+
+
+###############################################################################
+ _Примеры replicacontroller_
+
+apiVersion: v1
+kind: ReplicationController
+metadata:          
+  name: myapp-rc
+  labels:
+    app: myapp
+    type: front-end
+spec:            # Replication Controler 
+  template:        # обязательно нужен template 
+
+    metadata:
+      name: myapp-pod
+      labels:
+        app: myapp
+        type: frontend 
+    spec:           # Pod 
+      containers:
+        - name: nginx-container 
+          image: nginx
+
+  replicas: 3         # должно быть на уровне с самой первой template для Replication Controller  количество pods 
+#################################################################################
+_Примеры replicaset_
+apiVersion: apps/v1   # тут версия api отличается  для ReplicaSet 
+kind: ReplicaSet       # и тут надо указать ReplicaSet
+metadata:
+  name: myapp-replicaset  # в имени указываем replica set 
+  labels:
+      app: myapp
+      type: frontend   
+spec:            # ReplicaSet
+  template:
+
+    metadata:
+     name: myapp-pod
+     labels:
+        app: myapp
+        type: frontend 
+    spec:           # Pod 
+      containers:
+        - name: nginx-container 
+          image: nginx
+
+  replicas: 6         # должно быть на уровне с самой первой template для Replication Controller                
+  selector:           # тоже отличие ReplicaSet от ReplicationController
+     matchLabels:       # под какой label поподает 
+        type: frontend
+
+
+
+2 Еще один пример где мы указываем labels и selectors 
+apiVersion: apps/v1   # тут версия api отличается  для ReplicaSet 
+kind: ReplicaSet       # и тут надо указать ReplicaSet
+metadata:
+  name: simple-webapp  # в имени указываем replica set 
+  labels:
+      app: App1
+      function: Front-end   
+spec:            # ReplicaSet
+  replicas: 3 
+  selector:         # обрати внимание здесь selector 
+    matchLabels:  # matchLabel переводится к какому labeel подходит
+      app: App1       # указываем с какой app связать 
+    template:    
+     metadata:
+     labels:
+        app: App1     # здесь также указываем с какой label указать 
+        function: Front-end 
+    spec:           # Pod 
+      containers:
+        - name: simple-webapp 
+          image: simple-webapp
+
+  replicas: 6         # должно быть на уровне с самой первой template для Replication Controller                
+  selector:           # тоже отличие ReplicaSet от ReplicationController
+     matchLabels:       # под какой label попод
+
+
+ 7 selectors labels позволяет связывать приложения    
+###################################################################################
+3 пример pod 2 репликик 
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+   name: replicaset-1
+spec:
+   replicas: 2
+   selector:
+      matchLabels:
+        tier: nginx  # здесь была ошибка к какому label подходит front-end
+   template:
+     metadata:
+       labels:
+        tier: nginx                # template это описание pod и tier должен полностью совпадать !!!
+     spec:
+       containers:
+       - name: nginx        
+         image: nginx
+
+ k apply -f replicaset-definition-1.yaml   
+Помни labels всегда должны совпадать с label pod при создании реплик
+################################################################
+_Пример DaemonSets_
+Очень похожи на replicaset 
+
+Пример replicaset-definition.yaml
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: monitoring-daemon
+spec:
+  selector:
+    matchLabels:
+      app: monitoring-agent
+template:
+  metadata:
+    labels:
+      app: monitoring-agent
+  spec:
+    containers:
+    - name: monitoring-agent
+      image: monitoring-agent
+######################################################################
+
+#####################################################
+2 Пример daemon-set-definition.yaml      
+
+apiVersion: apps/v1
+kind: DaemonSet        # практически похожи только тут отличие !!!!!
+metadata:
+  name: monitoring-daemon
+spec:
+  selector:
+    matchLabels:
+      app: monitoring-agent
+template:
+  metadata:
+    labels:
+      app: monitoring-agent
+spec:
+  containers:
+  - name: monitoring-agent
+    image: monitoring-agent
+################################################################
+3 Пример еще один DaemonSet
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  creationTimestamp: null
+  labels:
+    app: elasticsearch
+  name: elasticsearch
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - image: k8s.gcr.io/fluentd-elasticsearch:1.20
+        name: fluentd-elasticsearch
+        resources: {}
+
+
+##############################################################################
+_Пример Deployment_ 
+
+  apiVersion: apps/v1   # тут версия api отличается  для Deployment 
+kind: Deployment       # и тут надо указать Deployment
+metadata:
+  name: myapp-deployment  # в имени указываем myapp-deployment
+  labels:
+      app: myapp
+      type: front-end   
+spec:            # Deployment
+  template:
+    metadata:
+     name: myapp-pod
+     labels:
+        app: myapp
+        type: front-end 
+    spec:           # Pod 
+      containers:
+        - name: nginx-container 
+          image: nginx
+
+  replicas: 3         # должно быть на уровне с самой первой template для Replication Controller                
+  selector:           # тоже отличие ReplicaSet от ReplicationController
+     matchLabels:       # под какой label поподает 
+        type: frontend
+
+# k create -f deployment-definition.yml 
+
+
+_Пример yml namespace_
+
+1 просто создаем namespace !!! yml
+apiVersion: v1   # версия api для Service
+kind: Namespace      # и тут надо указать вид Service
+metadata:
+  name: dev  # в имени указываем имя namespace dev  
+
+2 Пример указания namespace для конкретного pod 
+apiVersion: v1      # указываем api версию тип  String
+kind: Pod
+metadata:                    
+  name: myapp-pod   # имя приложения, то что здесь это словарь
+  namespace: dev      # указываю конкретный dev namespace    
+  labels:           # какой label используется это Dictionary поэтому отступ для app в metadata указать namespace 
+       app: myapp
+       type: front-end   # тип приложения указываем 
+
+spec:        # описание конкретного контейнера 
+  containers:  # list Array
+    - name: nginx-container   # имя контейнера - тире так как это первая позиция 
+      image: nginx            # сам образ 
+
+
+3 Пример задавания конкретных лимитов для конкретного namespace 
+
+apiVersion: v1   # версия api для Service
+kind: ResourceQuota      # и тут надо указать вид Service
+metadata:
+  name: compute-quota  # в имени compute-quota
+  namespace: dev        # конкертный dev 
+spec:          
+  hard:
+    pods: "10"
+    requests.cpu: "4"
+    requests.memory: 5Gi
+    limits.cpu: "10"
+    limits.memory: 10Gi 
+
+# k create -f Compute-quota.yml 
+######################################################################
+4  _Пример настройки limits_
+Еще примеры по созданию лимитов 
+https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/memory-default-namespace/
+# дока по лимитам 
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp-color
+  labels:
+    name: simple-webapp-color 
+spec:
+  containers:
+  -  image: simple-webapp-color
+     name: simple-webapp-color
+     ports:
+       - containerPort: 8080
+     resources:
+       requests:
+         memory: "1Gi"
+         cpu: 1  
+       limits:          # минимальные default limits выставляем 
+         memory: "2Gi"
+         cpu: 2  
+
+
+# 1 cpu приравняется:
+1 AWS vCPU
+1 GCP Core
+1 Azure Core 
+1 Hyperthread 
+######################################
+5 Еще примеры по созданию лимитов в pods 
+1 In the previous lecture, I said - "When a pod is created the containers are assigned a default CPU request of .5 and memory of 256Mi". For the POD to pick up those defaults you must have first set those as default values for request and limit by creating a LimitRange in that namespace.
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mem-limit-range
+spec:
+  limits:
+  - default:
+      memory: 512Mi
+    defaultRequest:
+      memory: 256Mi
+    type: Container
+https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/memory-default-namespace/
+
+
+2 
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cpu-limit-range
+spec:
+  limits:
+  - default:
+      cpu: 1
+    defaultRequest:
+      cpu: 0.5
+    type: Container
+https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/cpu-default-namespace/
+
+References:
+https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource
+############################################################################
+
+
+###############################################################
+_Пример ClusterIP service_
+1 
+
+apiVersion: v1   # версия api для Service
+kind: Service      # и тут надо указать вид Service
+metadata:
+  name: back-end  # в имени указываем back-end
+spec:            # Service
+    type: ClusterIP      # тип сервиса ClusterIP 
+    ports:
+     - targetPort: 80   # port для для всех pod под конкретным labels 
+       port: 80         # port для самого сервиса 
+      
+    selector:            # тут мы вставляем данные labels из описания конкретного pod
+        app: myapp
+        type: back-end    # labels нашего pod
+
+2 
+# k create -f service-deinition.yml 
+3 k get svc
+
+2 Create a service redis-service to expose the redis application within the cluster on port 6379.
+создаем сервис svc redis-service для уже созданного приложения redis тип cluster ip 
+
+  kubectl create service clusterip redis --tcp=6379:6379 --dry-run=client -o yaml
+# можно командой а можно yaml формате 
+
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: redis
+  name: redis
+spec:
+  ports:
+  - name: 6379-6379
+    port: 6379
+    protocol: TCP
+    targetPort: 6379
+  selector:
+    app: redis
+  type: ClusterIP
+status:
+  loadBalancer: {}
+####################################################################
+_Пример service NodePort_
+
+apiVersion: v1   # версия api для Service
+kind: Service      # и тут надо указать вид Service
+metadata:
+  name: myapp-service  # в имени указываем myapp-service
+  labels:
+      app: myapp
+      type: front-end   
+spec:            # Service
+    type: NodePort
+    ports:
+     - targetPort: 80   # port для конкретного pod 
+       port: 80         # port для самого сервиса 
+       nodePort: 30008  # port для нашего node через который пойдут запросы обязательно разрешен порт 30000-32767
+ # путь запроса  node:30008 => serice:80 => pod:80     
+    selector:            # тут мы вставляем данные labels из описания конкретного pod
+        app: myapp
+        type: front-end  
+
+
+# k create -f service-definition.yml     
+####################################################################
+_Пример service LoadBalancer_
+
+apiVersion: v1   # версия api для Service
+kind: Service      # и тут надо указать вид Service
+metadata:
+  name: back-end  # в имени указываем back-end
+spec:            # Service
+    type: LoadBalancer      # тип сервиса LoadBalancer 
+    ports:
+     - targetPort: 80   # port для для всех pod под конкретным labels 
+       port: 80         # port для самого сервиса 
+      
+    selector:            # тут мы вставляем данные labels из описания конкретного pod
+        app: myapp
+        type: back-end    # labels нашего pod
+        nodePort: 30008  # port для нашего node через который пойдут запросы
+
+
+# k create -f service-deinition.yml       
+
+############################################################################
+_Пример Manual Scheduling_
+
+
+
+1 pod-definition.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx       # дети metadata должно в одну линейку быть
+  labels:
+    app: nginx      # дети Labels поэтому должны быть в одном отступе
+spec:
+  containers:
+    - name: nginx 
+      image: nginx
+      ports:
+        - containerPort: 8080
+  nodeName: node02               # будет искать в каком pod какой node указан 
+
+# k apply -f pod-definition.yaml
+
+
+
+2 Pod-bind-defition.yaml 
+apiVersion: v1
+kind: Binding 
+metadata:
+  name: nginx 
+target: 
+  apiVersion: v1 
+  kind: Node
+  name: node02 
+
+# k apply -f Pod-bind-defition.yaml
+###########################################################################
+
+
+_Пример yaml taint tolerant_ 
+1 Пример настройки node (taint) и pod (tolerant)
+# k taint nodes node1 app=blue:NoSchedule   !!!!! 
+# помни taint это node tolerant это для pod
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx
+  tolerations:
+  - key: "app"    # команда выше app
+    operator: "Equal"   # =
+    value: "blue"          # blue
+    effect: "NoSchedule"  # NoSchedule
+# начиная с key запись равносильна app=blue:NoSchedule
+# k taint nodes node1 app=blue:NoSchedule пример настройки node 
+
+2  Pod будет прибит если у него не тот tolerant 
+Итого по сути taint tolerant просто говорит каким pod на какой node можно а где нельзя они не отвечают за распределение 
+
+
+
+3 
+_пример yaml pod tolerant_ 
+cat bee.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: bee
+  name: bee
+spec:
+  containers:
+  - image: nginx
+    name: bee
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+  tolerations:              # обрати внимание в секции spec никаких отступов 
+         - key: "spray"
+           operator: "Equal"
+           value: "mortein"
+           effect: "NoSchedule"  
+status: {}
+
+
+4 Пример как мы убираем taints в node чтобы pod работали 
+k taint node controlplane node-role.kubernetes.io/control-plane:NoSchedule-  
+untainted    
+# убираем эффект NoSchedule-
+
+k descrtibe node controlplane   # убедимся в этом 
+Taints:<none>
+Убрали taints 
+Pod mosquito будет работать 
+
+#################################################################
+
+
+_Пример Node Affinity_
+6 Set Node Affinity to the deployment to place the pods on node01 only.
+k edit deployment blue 
+
+Name: blue
+Replicas: 3
+Image: nginx
+NodeAffinity: requiredDuringSchedulingIgnoredDuringExecution
+Key: color
+value: blue
+###################################################
+k edit deployment blue 
+
+spec:
+  affinity:                       # начало !! перед самим описанием контейнеров добавил данное значение 
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:        # requiredDuringSchedulingIgnoredDuringExecution 
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: color            # Key: color смотри выше требования 
+            operator: In
+            values:
+            - blue               # value: blue       конец!! 
+  containers:
+  - image: nginx
+    imagePullPolicy: Always
+    name: nginx
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  terminationGracePeriodSeconds: 30
+
+
+##########################################################
+2 Пример создания deployment с pods к привязке к конкретной node 
+2.1 То что нужно сделать 
+Create a new deployment named red with the nginx image and 2 replicas, and ensure it gets placed on the controlplane node only.
+Use the label key - node-role.kubernetes.io/control-plane - which is already set on the controlplane node.
+
+Name: red
+Replicas: 2
+Image: nginx
+NodeAffinity: requiredDuringSchedulingIgnoredDuringExecution
+Key: node-role.kubernetes.io/control-plane
+Use the right operator
+
+1 k describe node controplane   # мы смотрим labels какие есть у данной node 
+2 kubectl get nodes controlplane --show-labels              # но можно и так проверить 
+NAME           STATUS   ROLES           AGE   VERSION   LABELS
+controlplane   Ready    control-plane   32m   v1.24.0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=controlplane,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=,node.kubernetes.io/exclude-from-external-load-balancers=
+
+node-role.kubernetes.io/control-plane  # Видим что данный label есть в node controplane !!!!
+
+2.2  Начинаю делать 
+ k create deployment red --image=nginx --replicas=2 --dry-run=client -o yaml > red.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: red
+  name: red
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: red
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: red
+    spec:
+      affinity:                 # добавляю сюда affinity   начало 
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane    # данный label есть в node controplane
+                operator: Exists                               # Exists присуствует конец
+      containers:
+      - image: nginx
+        name: nginx
+        resources: {}
+status: {}
+
+
+2 # k create -f red.yaml
+
+Итого 
+1 Сначало смотрю есть ли данный label в node могу его задать 
+2 при создании pods или deployment добавляю Affinity в описании контейнера в yaml файл указываю label и запускаю манифест
+
+
+######################################################
+_Пример scheduler yml_
+
+1 my-scheduler-config.yaml # свой конфиг настраиваем 
+
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+- schedulerName: my-scheduler 
+leaderElection:          # разные scheduler на разных node только один может бытьт активным поэтому нужен leader 
+  leaderEffect: true 
+  resourceNamespace: kube-system
+  resourceName: lock-object-myscheduler  
+##################################################################
+ https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
+2   Пример из документации:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: scheduler
+    tier: control-plane
+  name: my-scheduler
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      component: scheduler
+      tier: control-plane
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        component: scheduler
+        tier: control-plane
+        version: second
+    spec:
+      serviceAccountName: my-scheduler
+      containers:
+      - command:
+        - /usr/local/bin/kube-scheduler
+        - --config=/etc/kubernetes/my-scheduler/my-scheduler-config.yaml  # !!!
+        image: gcr.io/my-gcp-project/my-kube-scheduler:1.0
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10259
+            scheme: HTTPS
+          initialDelaySeconds: 15
+        name: kube-second-scheduler
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 10259
+            scheme: HTTPS
+        resources:
+          requests:
+            cpu: '0.1'
+        securityContext:
+          privileged: false
+        volumeMounts:
+          - name: config-volume                # !!! 
+            mountPath: /etc/kubernetes/my-scheduler   # !!!!
+      hostNetwork: false
+      hostPID: false
+      volumes:
+        - name: config-volume
+          configMap:
+            name: my-scheduler-config
+
+##########################################################
+ 3 
+Пример подключения scheduler к конкретному pod !!! 
+pod-definition.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx       # дети metadata должно в одну линейку быть
+spec: 
+  containers:
+    - name: nginx
+      image: nginx
+  schedulerName: my-custom-scheduler     # Подключение к scheduler 
+
+# k create -f pod-definition.yaml     
+если scheduler некорретно был настроен pod будет в Pending state            
+####################################################################
+4 
+Deploy scheduler as a PoD 
+Пример настройки scheduler как pod 
+
+my-custom-scheduler.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-custom-scheduler
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+  - kube-scheduler
+  - --address=127.0.0.1
+  - --kubeconfig=/etc/kubernetes/scheduler.conf       # обрати внимание отсылка на общий конфиг
+  - --config=/etc/kubernetes/my-scheduler-config.yaml   # обрати внимание отсылка на конкретный конфиг scheduler    
+  image: k8s.gcr.io/kube-scheduler-amd64:v1.11.3
+  name:kube-scheduler
+#########################################################################
+5 Очень хороший пример создания scheduler и сразу добавления его в pod 
+Пример кастомного 
+cat my-scheduler.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: my-scheduler
+  name: my-scheduler
+  namespace: kube-system
+spec:
+  serviceAccountName: my-scheduler
+  containers:
+  - command:
+    - /usr/local/bin/kube-scheduler
+    - --config=/etc/kubernetes/my-scheduler/my-scheduler-config.yaml
+    image: k8s.gcr.io/kube-scheduler:v1.24.0                  # отредактировали данный образ готовый scheduler !! s
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 10259
+        scheme: HTTPS
+      initialDelaySeconds: 15
+    name: kube-second-scheduler
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: 10259
+        scheme: HTTPS
+    resources:
+      requests:
+        cpu: '0.1'
+    securityContext:
+      privileged: false
+    volumeMounts:
+      - name: config-volume
+        mountPath: /etc/kubernetes/my-scheduler
+  hostNetwork: false
+  hostPID: false
+  volumes:
+    - name: config-volume
+      configMap:
+        name: my-scheduler-config
+# k create -f my-scheduler.yaml 
+
+
+2 # По сути нам надо создать pod и добавить scheduler туда  который был создан выше 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx       # дети metadata должно в одну линейку быть
+spec: 
+  containers:
+    - name: nginx
+      image: nginx
+  schedulerName: my-scheduler     # Подключение к scheduler  !!
+
+
+# k create -f nginx-pod.yaml  
+
+###########################################################
+6 Priority для scheduler 
+1 pod-definition.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp-color
+  labels:
+    name: simple-webapp-color 
+spec:
+  priorityClassName: high-priority   # Priority !!!
+  containers:
+  -  image: simple-webapp-color
+     name: simple-webapp-color
+     resorces:
+       requests:
+         memory: "1Gi"               # ресурсы которые мы распределяем 
+         cpu: 10
+
+
+2 Priority для scheduler с конкретным nodeName
+#pod-definition.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp-color
+  labels:
+    name: simple-webapp-color 
+spec:
+  priorityClassName: high-priority   # Priority !!!
+  containers:
+  -  image: simple-webapp-color
+     name: simple-webapp-color
+     nodeName: node02    # указываем конкертный node02          !!!! 
+     resorces:
+       requests:
+         memory: "1Gi"               # ресурсы которые мы распределяем 
+         cpu: 10
+
+############################################################
+
+3 Пример настройки scheduler в одном файле, настройка нескольких профайлов 
+
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+- schedulerName: my-scheduler-2 
+  plugins:
+    score:
+      disabled:
+      - name: Tainttoleration
+      enabled:
+      - name: MyCustomPluginA
+      - name: MyCustomPluginB
+
+- schedulerName: my-scheduler-3
+  plugins:
+    prescore:
+      disabled:
+      - name: '*'
+      score:
+      disabled:
+      - name: '*'
+      
+- schedulerName: my-scheduler-4
+##############################################################################
+_Пример Rolling Recreate update_
+
+1 Интересный пример Rolling update  !!! 
+selector:
+    matchLabels:
+      name: webapp
+  strategy:                  # !!
+    rollingUpdate:
+      maxSurge: 25%          # !!
+      maxUnavailable: 25%    # !!
+    type: RollingUpdate      # !!
+
+
+2 ниже пример strategy 
+k edit deployment frontend
+strategy:
+    type: Recreate    # делаем вот так !!  recreatee то что выше не нужно
+
+
+###########################################################################
+_Пример configMap yml_
+
+1 пример yaml c отсылкой на конкретный configmap который был создан ранее 
+ cat /tmp/kubectl-edit-889361750.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2022-11-21T07:21:38Z"
+  labels:
+    name: webapp-color
+  name: webapp-color
+  namespace: default
+  resourceVersion: "818"
+  uid: 36419289-81a1-49df-9082-9889e4212703
+spec:
+  containers:
+  - envFrom:            # указываем конкретный configmap который хотим указывать
+      - configMapRef:
+          name: webapp-config-map
+    image: kodekloud/webapp-color
+    imagePullPolicy: Always
+    name: webapp-color
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+
+ 2 Пример задачи переменных в yaml файле 
+spec: 
+  containers:
+  - env:
+   - name: APP_COLOR
+     value: green
+# нам не даст сохранить но покажет путь где можно его запустить    
+
+#######################################################################
+_Пример secret yml_
+
+0
+secret-data.yaml  
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret             # !!! само имя которое будем использовать в других манифестах
+data:
+  DB_Host: bXlzcWw=
+  DB_User: cm9vdA==
+  DB_Password: cGFzd3Jk
+
+1 
+pod-definition.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-webapp-color
+  labels:
+    name: simple-webapp-color
+spec:
+  containers:
+  - name: simple-webapp-color
+    image: simple-webapp-color
+    ports:
+      - containerPort: 8080apiVersion: v1
+    envFrom:               # словарь 
+      - secretRef:
+            name: app-secret    # передаю имя секрета который был создан выше 
+###################################################
+2 
+Способы подключения секретов к pod 
+1 ENV
+envFrom:
+  - secretRef:
+        name: app-config
+
+2 SINGLE ENV
+env:
+  - name: DB_Password
+    valueFrom:
+      secretKeyRef:
+        name: app-secret
+        key: DB_Password
+
+3 Volume 
+
+volumes:
+- name: app-secret-volume
+  secret:
+    secretName: app-secret
+
+4 Inside of the container 
+
+ ls /opt/app-secret-volumes     
+# DB_HOST DB_Password  DB_User 
+
+cat /opt/app-secret-volumes/DB_Password
+paswrd   # тут мы можем увидеть пароль 
+
+
+
+
+
+
+
+
+
+
+
+
+#####################################################################################
+
+_Imperative_commands_
+1 k run nginx --image=nginx 
+k run custom-nginx --image=nginx --port=8080         # c конкретным портом 
+2 k create deployment --image=nginx nginx 
+3 k expose deployment nginx --port 80   # создаем сервис 
+4 k edit deployment nginx   # вносим изменения в deployment nginx 
+5 k scale deployment nginx --replicas=5  # создаем реплики 
+6 k set image deployment nginx nginx=nginx:1.18    # устанавиливаем конкретную версию образа для deployment nginx 
+7 k create -f nginx.yaml
+8 k replace -f nginx.yaml     # заменить на горячую уже созданный конфиг 
+k replace --force -f nginx.yaml    !!!!!
+# удаляет предыдущий pod а потом пересоздает его  
+9 k delete -f nginx.yaml      # удаляем нашу настройку 
+10 1 kubectl create deployment redis-deploy --image=redis --replicas=2 -n dev-ns
+создали deployment  конкретный  redis-deploy  с образа redis и 2 реплики в namespace dev-ns 
+2 k scale deployment redis-deploy  --replicas=3 -n dev-ns        # сразу же меняю количество реплик !!!! 
+
+11 k run custom-nginx --image=nginx --port=8080   # с конкретным портом 
+pod/custom-nginx created
+
+12 Create a pod called httpd using the image httpd:alpine in the default namespace. Next, create a service of type ClusterIP by the same name (httpd). The target port for the service should be 80.
+Try to do this with as few steps as possible.
+CheckCompleteIncomplete
+'httpd' pod created with the correct image?
+'httpd' service is of type 'ClusterIP'?
+'httpd' service uses correct target port 80?
+'httpd' service exposes the 'httpd' pod?
+
+1  k run httpd  --image=httpd:alpine 
+2 kubectl expose pod httpd --type=ClusterIP --port=80 --name=httpd         !!!!!! 
+создал сервис для pod httpd тип ClusterIP  с таргет порт 80 сервис  по имени httpd
+###########################################################################
+_Certification Tip!_шпаргалка_!!
+
+1 https://kubernetes.io/docs/reference/kubectl/conventions/
+
+1 
+kubectl run nginx --image=nginx
+# Create an NGINX Pod
+
+2 kubectl run nginx --image=nginx --dry-run=client -o yaml
+# Generate POD Manifest YAML file (-o yaml). Don't create it(--dry-run)
+
+3 
+kubectl create deployment --image=nginx nginx
+# Create a deployment
+
+4 
+kubectl create deployment --image=nginx nginx --dry-run=client -o yaml
+# Generate Deployment YAML file (-o yaml). Don't create it(--dry-run)
+
+
+5 
+1 kubectl create deployment --image=nginx nginx --dry-run=client -o yaml > nginx-deployment.yaml
+# Generate Deployment YAML file (-o yaml). Don't create it(--dry-run) with 4 Replicas (--replicas=4)
+
+2 kubectl create -f nginx-deployment.yaml
+# Save it to a file, make necessary changes to the file (for example, adding more replicas) and then create the deployment.
+
+3 kubectl create deployment --image=nginx nginx --replicas=4 --dry-run=client -o yaml > nginx-deployment.yaml
+# OR
+In k8s version 1.19+, we can specify the --replicas option to create a deployment with 4 replicas.
+######################################################################################
+_Certification Tips - Imperative Commands with Kubectl_
+
+1 kubectl run nginx --image=nginx
+# Create an NGINX Pod
+# создать ndinx pod
+
+
+2 kubectl run nginx --image=nginx --dry-run=client -o yaml
+# Generate POD Manifest YAML file (-o yaml). Don't create it(--dry-run)
+# создаем манифест файл Generate POD Manifest YAML file  #
+
+
+3 kubectl create deployment --image=nginx nginx
+# Deployment# Create a deployment
+# создаю deployment с образом nginx 
+
+4 
+kubectl create deployment --image=nginx nginx --dry-run=client -o yaml
+# Generate Deployment YAML file (-o yaml). Don't create it(--dry-run)
+# создаю deployment с образом nginx только это вывод yaml формате 
+
+5 kubectl create deployment nginx --image=nginx --replicas=4
+# Generate Deployment with 4 Replicas
+# создаю deployment nginx с образом nginx 4 реплики 
+
+
+6 
+1 kubectl scale deployment nginx --replicas=4
+# You can also scale a deployment using the kubectl scale command.
+# увеличиваю количество replic до 4 для nginx 
+
+2  kubectl create deployment nginx --image=nginx --dry-run=client -o yaml > nginx-deployment.yaml
+Another way to do this is to save the YAML definition to a file and modify
+You can then update the YAML file with the replicas or any other field before creating the deployment.
+# создаем свой манифест 
+
+7 
+1 kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml
+# Service. Create a Service named redis-service of type ClusterIP to expose pod redis on port 6379
+(This will automatically use the pod's labels as selectors)
+#  создаю service ClusterIP c именем --name redis-service в yaml формате 
+Or
+
+2 kubectl create service clusterip redis --tcp=6379:6379 --dry-run=client -o yaml 
+# (This will not use the pods labels as selectors, instead it will assume selectors as app=redis. You cannot pass in selectors as an option. So it does not work very well if your pod has a different label set. So generate the file and modify the selectors before creating the service)
+# создаем service  clusterip redis --tcp=6379:6379 
+
+3 kubectl expose pod nginx --type=NodePort --port=80 --name=nginx-service --dry-run=client -o yaml
+# Create a Service named nginx of type NodePort to expose pod nginx's port 80 on port 30080 on the nodes:
+(This will automatically use the pod's labels as selectors, but you cannot specify the node port. You have to generate a definition file and then add the node port in manually before creating the service with the pod.)
+# здесь создаю service для pod nginx --type=NodePort --port=80 --name=nginx-service # в yaml формате 
+
+4 kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=client -o yaml
+(This will not use the pods labels as selectors)
+Both the above commands have their own challenges. While one of it cannot accept a selector the other cannot accept a node port. I would recommend going with the kubectl expose command. If you need to specify a node port, generate a definition file using the same command and manually input the nodeport before creating the service.
+# создаю service nodeport порт для node 30080 и порты для самого сервиса и pod 80 внутри самой node  --tcp=80:80 --node-port=30080
+запрос идет на node:30080 => service:80 => pod:80
+
+
+
+Reference:
+https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands
+
+https://kubernetes.io/docs/reference/kubectl/conventions/
+
+
+####################################################################################
+_A quick note on editing PODs and Deployments_
+
+1 мы не можем редактировать спецификации Pod к примеру:
+
+spec.containers[*].image
+spec.initContainers[*].image
+spec.activeDeadlineSeconds
+spec.tolerations
+
+пример: 
+1.1 k edit pod <pod name>
+# комментарии там трогать не надо 
+
+2 kubectl delete pod webapp
+# удаляем конкретный pod 
+
+3 kubectl create -f /tmp/kubectl-edit-ccvrq.yaml
+создаем новый pod используя временный файл 
+
+4 kubectl get pod webapp -o yaml > my-new-pod.yaml
+vi my-new-pod.yaml # редактируем данный файл
+kubectl delete pod webapp  # удаляем pod 
+kubectl create -f my-new-pod.yaml    # создаем после удаления нужный нам pod 
+
+5 kubectl edit deployment my-deployment
+
+####################################################################################
+
+_cluster_
+1 k config view
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: DATA+OMITTED
+    server: https://cluster1-controlplane:6443
+  name: cluster1
+- cluster:
+    certificate-authority-data: DATA+OMITTED
+    server: https://10.38.26.21:6443
+  name: cluster2
+
+  # можем посмотреть количество кластеров 
+
+2   kubectl config use-context cluster1   
+# но также к node мы можем подключаться через команду kubectl выше тоже самое что и по ssh 
+3  ssh cluster2-controlplane
+# а можем и по ssh
+
+
+_nodes_
+1 k top node
+# смотрим нагрузку на наш node 
+2 watch get nodes 
+# смотрим в реальном времени что происходит с нашей node 
+3 ssh node01  
+# когда нам надо обновить конкретную node надо к ней подключиться но помни 
+k drain node01 --ignore-daemonsets   #но установку кордона мы делаем на master node к примеру controlplane
+4 ssh cluster2-controlplane
+# еще пример подключений к различным node в кластере, помни если кластеров несколько и подключение настроено  то можно к разным кластерам подключаться 
+5 kubectl config use-context cluster1   
+# но также к node мы можем подключаться через команду kubectl выше тоже самое что и по ssh 
+
+_pods_
+1 k run static-busybox --image=busybox --restart=Never --dry-run=client -o yaml --command -- sleep 1000 > static-busybox.yaml 
+# обрати внимание что при создании pod достаточно написать только название само слово pod писать после run не нужно
+2 k top pod 
+# смотри нагрузку на pods 
+3 k log app -n elastic-stack               # !!! 
+# смотрим логи конкретного pod в его namespace 
+4 k -n elastic-stack exec -it app -- cat /log/app.log     # !!!
+# в namespace elastic-stack,  exec -it app увидим логи в работающем pod app интерактивно и запустим команду cat /log/app.log
+5 k describe pod green  # смотрим конкретный pod 
+6 k describe pod  # смотрим сразу все pod \
+7 k get pods purple   # смотрим сразу нужный нам pods 
+NAME     READY   STATUS     RESTARTS   AGE
+purple   0/1     Init:0/2   0          3m
+
+8 k get pods -o wide   # смотрим на какой node лежит определенный контейнер 
+NAME                    READY   STATUS    RESTARTS   AGE     IP           NODE           NOMINATED NODE   READINESS GATES
+blue-797fc567b4-74kfw   1/1     Running   0          4m22s   10.244.1.2   node01         <none>           <none>
+9 k describe nodes  # так же можем увидеть какой контейнер где лежит 
+
+10 k get pods -n kube-system 
+AGE 37 min   # обращай внимнание на AGE сразу понятно сколько по времени pod уже раюботает
+11 k logs -n kube-system etcd-controlplane 
+# смотрим логи pod в конкретном его namespace s
+
+12 k describe pod etcd-controlplane -n kube-system 
+k -n kube-system descirbe pod etcd-cluster1-controlplane  # так скорей всего правильней 
+# если нам надо посмотреть в конкретном namespace нужный нам pod 
+# помни указываешь в начале namespace а потом уже pod указывай 
+
+
+13 k delete pod etcd-controlplane -n kube-system
+# удалим статичный pod чтобы посмотрев на новый манифест он был пересоздан 
+
+#########################################################################################################
+_daemonset_
+Итого по командам daemonset:
+1 k get daemonsets  # смотрим какие у нас есть 
+2 k describe daemonsets monitoring-daemon 
+# описание daemonsets monitoring-daemon 
+3 k get daemonsets -A  # тут смотрим во всех namespace
+4 k create deployemnt elasticserarch -n kube-system --image=k8s.gcr.io --dry-run=client -o yaml > fluentd.yaml
+# на данный момент deaemonset создается таким способом 
+5 vim fluentd.yaml
+kind: DaemonSet
+replicas: 1  # надо удалит смотри пример ниже и удаляей того что нету 
+strategy: {}  # тоже удаляем  
+status: {}   # тоже удаляем 
+# k create -f fluent.yaml
+6  k describe ds kube-proxy -n kube-system
+# в конкретном namespace смотрим 
+
+#####################################################################
+
+_Static pods_
+1 k get nodes -A
+# смотрим во всех пространствах node 
+2 k get pods -A 
+Смотрим все pods во всех namespaces и если на конце pod указано имя node значит это static pod
+3 k get pod kube-apiserver-controlplane -n kube-system -o yaml  
+# можем описание pod и так посмотреть 
+ownerReferences:
+- apiVersion: v1
+  controller: true 
+  kind: Node            !!!   говорит о том что это static pod 
+  name: controlplane        !!!! 
+
+4 cat /var/lib/kubelet/config.yaml   
+# ищем путь для static pods 
+# apiVersion: kubelet.config.k8s.io/v1beta1  # kubelet creates pods 
+# StaticPodPath: /etc/kuberntes/manifests    # вот наш путь 
+####################################################################
+5 Надо удалить static-greenbox-node01 pod.
+1 k get pods 
+# обрати внимание на конце node01 
+2 k delete pod static-greenbox-node01 # но это нам не поможет так как это static pod 
+3 cd /etc/kuberntes/manifests   # но тут будет пусто по поводу static-greenbox-node01
+4 k get nodes 
+4.1 k get nodes -o wide  # смотрим подробней данную node 
+node01   10.38.102.8     # увидим данный ip node01 
+4.2 ssh 10.38.102.8   # подключаемся к конкретной node01 
+помни ты можешь по ssh подколючаться к нодам
+4.3 ls /etc/kubernetes/manifests  
+# тут будет пусто 
+4.4 cat /var/lib/kubelet/config.yaml     # смотрим конфиг на node01 
+StaticPodPath:/etc/just-to-mess-with-you   # получается на node01 другой путь к StaticPodPath
+4.5 cd /etc/just-to-mess-with-you 
+rm greenbox.yaml   # удалим здесь данный файл 
+5 k get pods --wide  # увидим как static-greenbox-node будет 
+
+7 k run pod static-busybox --image=busybox --dry-run=client -o yaml --command sleep 1000 > static-busybox.yaml
+ # в данном примере мы создаем pod static-busybox с образом busybox не запускаем команду, переводим в yaml формат, обрати внимание что если нам надо запустить 
+ команду то мы пишем command sleep 1000 
+#######################################################################################
+_scheduler_
+1 для наших pod мы можем настраивать различные scheduler насколько понял рабоатет только один зи нескольких настроенных schedulers 
+
+2 k get events -o wide 
+Reason     Source 
+Scheduled  my-custom-scheduler
+# узнаем какой scheduler работает 
+
+3 k logs my-custom-scheduler --name-space=kube-system 
+# смотрим логи конкретного scheduler ы
+
+3.1 k get pods --namespace=kube-system 
+# увидим наши scheduler 
+kube-scheduler-master 
+my-custom-scheduler   
+
+3.3 
+1 k get pods -A    !! 
+# смотрим какие pod scheduler сейчас есть смотри по названию 
+2  k describe pod kube-scheduler-controlplane -n kube-system  !! 
+# смотрим конкретный scheduler pod в namespace kube-system как правило там 
+3 k get pods -n kube-system   # проверяем наличие   после создания создается как обычный манифест файл   !! 
+# k create -f my-scheduler.yaml 
+
+
+
+4 
+Deploy scheduler as a PoD 
+Пример настройки scheduler как pod 
+
+my-custom-scheduler.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-custom-scheduler
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+  - kube-scheduler
+  - --address=127.0.0.1
+  - --kubeconfig=/etc/kubernetes/scheduler.conf       # обрати внимание отсылка на общий конфиг
+  - --config=/etc/kubernetes/my-scheduler-config.yaml   # обрати внимание отсылка на конкретный конфиг scheduler    
+  image: k8s.gcr.io/kube-scheduler-amd64:v1.11.3
+  name:kube-scheduler
+
+
+5 
+my-scheduler-config.yaml # свой конфиг настраиваем 
+
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+- schedulerName: my-scheduler 
+leaderElection:          # разные scheduler на разных node только один может бытьт активным поэтому нужен leader 
+  leaderEffect: true 
+  resourceNamespace: kube-system
+  resourceName: lock-object-myscheduler  
+
+
+
+6 Пример подключения scheduler к конкретному pod !!! 
+pod-definition.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx       # дети metadata должно в одну линейку быть
+spec: 
+  containers:
+    - name: nginx
+      image: nginx
+  schedulerName: my-custom-scheduler   
+
+# k create -f pod-definition.yaml     
+если scheduler некорретно был настроен pod будет в Pending state   
+########################################################################################
+_namespace_
+1 
+k describe pod kube-scheduler-controlplane -n kube-system  
+# namespace kube system смотрем конкертный системный pod scheduler 
+
+2   k config set-context --current --namespace=alpha
+# чтобы не писать постоянно namespace который будем изучать мы можем просто установить его как дефолтный очень удобно
+#########################################################################################3
+_kub_log_
+
+1 k top node  # смотрим какая нагрузка на наш node 
+2 k top pod # нагрузка по pod 
+kubectl top pod --sort-by='memory' --no-headers | head -1 # можно сразу по оперативной памяти смотреть  
+rabbit     130m   252Mi     # сразу по memory смотрим 
+3 k create -f .  # сразу все манифесты запускаем очень удобно
+4 docker run kodekloud/event-simulator 
+#тут мы видим логи в реальном времени 
+2 docker run -d kodekloud/event-simulator 
+2.1 чтобы посмотреть логи 
+docker logs -f ecf  # смотрим логи в реально времени 
+
+3 в kuber как настроено логирование 
+event-simulator.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: event-simulator-pod
+spec:
+  containers:
+  - name: event-simulator
+  image: kodekloud/event-simulator
+###########################
+1 k create -f event-simulator.yaml   # запускаем сервис смотрим логи в реаальном времени 
+2 k logs -f event-simulator-pod                  !!!! 
+
+3 если в одном pod несколько контенейнеров то чтобы посмотреть логи надо указать имя конкретного контейнера 
+event-simulator.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: event-simulator-pod
+spec:
+  containers:
+  - name: event-simulator    # ниже будем смотреть логи данного контейнера 
+  image: kodekloud/event-simulator
+  - name: image-processor
+  image: some-image-processor
+
+3.2 kubectl logs –f event-simulator-pod event-simulator            !!! 
+# в таком случае когда у нас 2 контейнера в одном pod то мы должны смотреть логи конкретного контейнера  !!! 
+##########################
+4 k logs webapp-1   
+# смотрим логи конкретного pods 
+
+5 k logs webapp-02 
+# не получится так как там крутиться 2 контейнера 
+READY
+2/2   # 2 контейнера 
+
+k logs webapp-2 simple-webapp     !!! 
+# указываем имя конкретного контейнера когда их двоеы  
+item out of stock 
+
+
+6 k log app -n elastic-stack               # !!! 
+# смотрим логи конкретного pod в его namespace 
+7 k -n elastic-stack exec -it app -- cat /log/app.log     # !!!
+# в namespace elastic-stack,  exec -it app увидим логи в работающем pod app интерактивно и запустим команду cat /log/app.log
+
+8 kubectl -n elastic-stack logs kibana
+# также мы можем посмотреть логи в elasticsearch через kibana
+
+9 k describe pod app
+# когда не запускается pod можно и так посмотреть не забывай про namespace если он нуже 
+
+10 k logs orange -c init-myservice
+# смотрим логи int container 
+его имя можем увидеть так 
+k describe pod orange 
+k edit pod orange 
+Init Containers:
+  init-myservice:   # имя init container 
+
+
+11 k logs -n kube-system etcd-controlplane 
+# смотрим логи pod в конкретном его namespace   
+################################################################
+_rolling_recreate_update_
+
+1 k rollout status deployment/myapp-deployment
+# смотрим статус rollout если success значит все норм 
+
+2 k rollout history deployment/myapp-deployment
+# смотрим историю rollout конкретного deployment
+
+3 k apply -f deployment-defintion.yaml   
+# вносим изменения 
+4 k set image deployment/myapp-deployment nginx=nginx:1.9.1 
+#или же мы можем сразу же задать конкретную версию образа но тогда нам надо помнить что нужно будет смотреть доку 
+
+5 k rollout undo deployment/myapp-deployment 
+# таким способом мы делаем откат на предыдущий deployment 
+deployment "myapp-deployment" rolled back   # увидим обратный откат 
+
+6 Когда идет upgrade мы можем увидеть как 
+k get replicasets 
+# мы это можем увидеть в реальном времени 
+myapp-deployment-67282
+myapp-deployment-6728282
+
+Итого
+Create 1 k create -f deployment-defintion.yaml
+Get    2 k get deploymentt
+Update 3 k apply -f deployment-defintion.yaml
+         k set image deployment/myapp-deployment nginx=nginx:1.9.1 
+Status 4 k rollout status deployment/myapp-deployment 
+         k rollout history deployment/myapp-deployment
+
+Rollback 5 k rollout undo deployment/myapp-deployment 
+# таким способом мы делаем откат на предыдущий deployment 
+deployment "myapp-deployment" rolled back   # увидим обратный откат  
+###################################################################
+_configMap_
+
+1 k describe cm
+2 k describe configmap   
+# смотрим описание наших configmap увидим переменные окружения 
+3 kubectl create configmap webapp-my-config --from-literal=APP_COLOR=darkblue 
+# создаем конфиг мап webapp с значением APP_COLOR=darkblue 
+4 k replace --force -f /tmp/kubectl-edit-192.yaml   
+# удалим pod и заменим его на новый файл
+5 kubectl create configmap webapp-my-config --from-literal=APP_COLOR=darkblue 
+# создаем конфиг мап webapp с значением APP_COLOR=darkblue 
+########################################################################
+_secret_
+Итого:
+
+1 Imperative 
+k create secret generic
+  <secret-name> --from-literal=<key>=<value> 
+
+k create secret generic \
+ app-secret --from-literal=DB_Host=mysql \
+            --from-literal=DB_User=root \
+            --from-literal=DB_Password=paswrd         !!!!
+# пример задания секретов  когда у нас один или несколько 
+# пример задания секретов  когда у нас один или несколько 
+
+
+2
+k create secret generic 
+ <secret-name>  --from-file=<path-to-file >
+
+k create secret generic \
+  app-secret --from-file=app_secret.properties           !!!
+# здесь пример мы задаем все секреты в конкретном файле 
+
+
+3
+1 k get secrets 
+2 k describe secrets 
+  DB_Host: 10 bytes
+  DB_User: 6 bytes
+  DB_Password: 4 bytes 
+# так мы увидим все секреты но не увидим все значения 
+
+3 k get secret app-secret -o yaml     !!!!!!!через get подробная информация 
+apiVersion: v1
+data:
+  DB_Host: bXlzcWw=              # !!! 
+  DB_Password: cGFzd3Jk            # !!! 
+  DB_User: cm9vdA==               #!!!
+kind: Secret
+metadata:
+  creationTimestamp: 2018-10-18T10:01:12Z
+  labels:
+    name: app-secret
+  name: app-secret
+  namespace: default
+uid: be96e989-d2bc-11e8-a545-080027931072
+type: Opaque
+# здесь мы можем посмотреть в yaml формате  
+
+3.1 Можем декодировать наши данные: 
+echo -n "bXlzcWw=" | base64 --decode
+mysql
+echo "bXlzcWw=" | base64 --decode
+mysql   # можно и без n
+
+
+4 
+# так можем делать в linux 
+echo -n 'mysql' | base64 
+bXlzcWw=
+2 echo -n 'root' | base64 
+cm9vdA==
+3 echo -n 'paswrd' | base64 
+cGFzd3Jk 
+
+
+5 декодируем обратно 
+echo –n ‘bXlzcWw=’ | base64 --decode
+mysql
+2 echo –n ‘cm9vdA==’ | base64 --decode
+root
+3 
+echo –n ‘cGFzd3Jk’ | base64 --decode
+paswrd
+
+
+6 Пример 3       !!! самый лучший способ по созданию секретов 
+k create secret generic db-secret --from-literal=DB_Host=sql01 --from-literal=DB_User=root --from-literal=DB_Password=password123
+##################################################################################################
+_maintenance_обслуживание_
+
+1 k drain node01   #  выводим из обслуживания node01 и с удалением текущих pod и с распределоением их на другие node
+1.1 k drain node01 --ignore-daemonsets   
+# так сработает если настроен replica set то все норм 
+1.2 k get nodes  # сразу увидим что одна node disabled 
+NAME           STATUS                     ROLES           AGE   VERSION
+controlplane   Ready                      control-plane   33m   v1.24.0
+node01         Ready,SchedulingDisabled   <none>          32m   v1.24.0
+2 k cordon node02 # тут мы как бы ставим кардон и туда больше pod уже не приходят но при этом старые pod не удаляем c данного node
+# более мягкая команда 
+3 k uncordon node01  # убираем crodon и новые pod идут на него 
+# убираем кардон для наших pod 
+4 k drain node01 --ignore-daemonsets
+node/node01 cordoned
+error: unable to drain node "node01" due to error:cannot delete Pods declare no controller (use --force to override): default/hr-app, continuing command...
+There are pending nodes to be drained:
+ node01
+cannot delete Pods declare no controller (use --force to override): default/hr-app
+
+# могут быть проблемы при использовании данной команды так как при удалении hr-app pod он может быть удален навсегда безвозвратно это связано с тем что он не закреплен за репликой set 
+
+There is apod in node01 which is not part of a replicaset 
+
+5 k drain node01 --ignore-daemonsets --force 
+# как вариант мы можем поставить кардон принудительно но в таком случае hr-app будет удален навсегда и не попадет ни на какой node если для него не будет настроен replica set 
+
+6 
+0 k drain node01   #  выводим из обслуживания node01 и с удалением текущих pod и с распределоением их на другие node
+# drain более жесткий кардон !!
+1 k cordon node01    # мягкий кордон 
+ # мы ставим crodon  на данную node но при этом старые pod останутся за данной node01 что очень удобно
+ 2 k get node node01
+NAME     STATUS                     ROLES    AGE   VERSION
+node01   Ready,SchedulingDisabled   <none>   18m   v1.24.0         # статус node 
+
+3   k get pod -o wide
+NAME                      READY   STATUS    RESTARTS   AGE    IP           NODE           NOMINATED NODE   READINESS GATES
+blue-797fc567b4-lvzbj     1/1     Running   0          11m    10.244.0.5   controlplane   <none>           <none>
+blue-797fc567b4-mwx8v     1/1     Running   0          13m    10.244.0.4   controlplane   <none>           <none>
+blue-797fc567b4-n4xtx     1/1     Running   0          11m    10.244.0.6   controlplane   <none>           <none>
+hr-app-5ff955d598-9gnvt   1/1     Running   0          7m4s   10.244.1.5   node01         <none>           <none>
+
+######################################################################################################
+_Upgrading kubeadm clusters_
+https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/#upgrade-kubelet-and-kubectl
+1 kubeadm upgrade plan 
+# можем проверить текщие версии компонентов нашего кластера 
+# помни после обновления надо будет мануально обновить kubelet 
+2 kubeadm upgrade apply 
+# предварительно тебе нужно обновить kubeadm 
+3 
+3.1 apt-get upgrade -y kubeadm=1.12.0-00
+3.2 kubeadm upgrade apply v1.12.0
+3.3 kubectl get nodes  # проверим версию 
+3.4 apt-get upgrade -y kubelet=1.12.0-00
+3.5 systemctl restart kubelet
+
+4 Примерный план обновления Worker node 1   # !!!!!! 
+Все node которые у нас есть:
+master node     worker node     worker node       worker node 
+v1.10           v1.10           v1.10             v1.10 
+
+1 k drain node-1 
+# ставим кардон и распределяем pod c дайнной node по другим равномерно node
+1.1 kubectl drain node01 --ignore-daemonsets
+# если надо отключить какую-то node надо запускать ее только на master node 
+
+2 apt-get upgrade -y kubeadm=1.12.0-00
+  apt-get upgrade -y kubelet=1.12.0-00
+3 kubeadm upgrade node config --kubelet-version v1.12.0
+4 systemctl restart kubelet   # рестартуем kubelet 
+5 kubectl uncordon node-1 # заупскать только на master node 
+# снимаем кардон с нашей node но помни для новых pod node могут прийти обратно, но старые сами по себе не вернуться если только не настроим taints для данной node или не пересоздадим старые pod в новые 
+6 И так по очереди каждую node 
+
+7 kubeadm upgrade plan         # !!!
+# посмотрим план рекомандации к обновлению 
+
+8 ssh node01  
+# когда нам надо обновить конкретную node надо к ней подключиться но помни 
+k drain node01 --ignore-daemonsets   #но установку кордона мы делаем на master node к примеру controlplane
+#################################################################
+9 Пример обновления kubeadm и kubelet до версии v1.25.0
+https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/#upgrade-kubelet-and-kubectl
+
+Upgrade the worker node to the exact version v1.25.0
+Обновить worker node version v1.25.0
+
+0 ssh node01   # Обязательно помни ты же обновляешь node01  !!!!
+но если настроено подругому по ip к примеру 
+k get nodes -o wide 
+ssh <internal ip> # смотри ip node01 и подключаейся к нему !!!!!
+
+1 apt-get update
+2 apt-get install kubeadm=1.25.0-00
+3 kubeadm upgrade node
+4 apt-get install kubelet=1.25.0-00 
+5 systemctl daemon-reload
+systemctl restart kubelet
+6 возвращаемся на master node 
+ k get nodes
+NAME           STATUS                     ROLES           AGE   VERSION
+controlplane   Ready                      control-plane   21m   v1.25.0   
+node01         Ready,SchedulingDisabled   <none>          20m   v1.25.0 
+# проверяем версию
+7
+1 k uncordon node01  # снимаем кордон новые pod если что пойдут сюда  тоже
+2  k get nodes
+NAME           STATUS   ROLES           AGE   VERSION
+controlplane   Ready    control-plane   23m   v1.25.0
+node01         Ready    <none>          22m   v1.25.0
+
+!!!!!!!!!
+#############################################################################################
+!!!!!!!!!Тоже самое только по текущей докуменатции !!!!!
+https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/#upgrade-kubelet-and-kubectl
+1 Upgrade kubeadm   # дока !! 
+# replace x in 1.25.x-00 with the latest patch version
+apt-mark unhold kubeadm && \
+apt-get update && apt-get install -y kubeadm=1.25.x-00 && \
+apt-mark hold kubeadm
+
+2 sudo kubeadm upgrade node
+
+####################################################
+3 Upgrade kubelet and kubectl  # дока !!
+# replace x in 1.25.x-00 with the latest patch version
+apt-mark unhold kubelet kubectl && \
+apt-get update && apt-get install -y kubelet=1.25.x-00 kubectl=1.25.x-00 && \
+apt-mark hold kubelet kubectl
+
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
+
+####################################################
+_backup_
+
+Итого:
+
+1 k get all --all-namespaces -o yaml > all-deploy-services.yaml
+# потом просто файл сохраним метод ресурс configuration 
+
+2  второй метод делаем резервную копию через ETCDCTL cluster и восстанавливаемся через нее
+2.1 ETCDCTL_API=3 etcdctl \
+snapshot save snapshot.db
+2.2 ls
+snapshot.db   # снапшот сохраниться в текущей директории
+
+2.3 ETCDCTL_API=3 etcdctl \
+snapshot status snapshot.db   # можем увидеть статус снапшота 
+
+2.4 service kube-apiserver stopped   
+# чтобы восстановится с файла snapshot.db надо стопнуть kube-apiserver
+
+2.5 ETCDCTL_API=3 etcdctl \
+snapshot restore snapshot.db \  # восстановления с файла snapshot.db
+
+2.6
+1 ETCDCTL_API=3 etcdctl \
+snapshot restore snapshot.db \
+--data-dir /var/lib/etcd-from-backup \    # здесь пример указания пути к файлу snapshot.db 
+# путь к директории добавится в конфигурацию etcd.service 
+
+
+2.7 1 systemctl daemon-reload 
+  2  service etcd restart      #обязательно рестартануть сервисы 
+
+2.8 service kube-apiserver start     # стартанем сервис 
+###############################################
+3 k get pods -n kube-system
+etcd-controlplane                      1/1     Running   0          3m57s
+# статичный pod на конце название node 
+k describe pod etcd-controlplane -n kube-system
+# подробней посмотрим данный pod  узнаем версию etcd 
+Image:         k8s.gcr.io/etcd:3.5.3-0
+
+##########################################################
+4  нам нуэно сделать снашот и сохранить его в директорию /opt/snapshot-pre-boot.db
+
+4.1 Перед тем как сделать снапшот нам надо изучить следующие данные 
+k describe pod etcd-controlplane -n kube-system
+--listen-client-urls=https://127.0.0.1:2379
+--trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt
+--cert-file=/etc/kubernetes/pki/etcd/server.crt
+--key-file=/etc/kubernetes/pki/etcd/server.key
+
+4.2 Приступаем делаем снапшот 
+export ETCDCTL_API=3 
+etcdctl snapshot  # теперь при вводе данной команды будет выскакивать подсказки  !!!!
+
+# сама команда данные брали из команды выше !!!
+etcdctl snapshot save --endpoints=127.0.0.1:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+/opt/snapshot-pre-boot.db
+
+# Snapshot saved at /opt/snapshot-pre-boot.db
+# сохраняем снапшот нам нужны, 127.0.0.1:2379  --cacert --cacert --key, /opt/snapshot-pre-boot.db 
+# это путь куда ложится файл  ниже указана команда откуда брались данные 
+
+####################################################################################
+5 делаем восстановление со снапшота 
+1 etcdctl snapshot restore --data-dir /var/lib/etcd-from-backup /opt/snapshot-pre-boot.db
+# делаем восстановление /var/lib/etcd-from-backup это директория которая есть на node и далее путь где лежит снапшот резервной копии
+
+2 ls /var/lib/etcd-from-backup 
+member 
+
+2  ls /etc/kubernetes/manifests 
+
+vim etcd.yaml   # нам надо указать путь где data лежит на самой node, на pod менять ничего не надо у них name один и тот же 
+
+ volumeMounts:
+    - mountPath: /var/lib/etcd    # где хранятся data в pod   Также мы можем тут изменить путь на /var/lib/etcd-from-backup но потом выше меняй путь !!!! 
+    # но тогда выше тоже придется менять путь --data-dir=/var/lib/etcd  на /var/lib/etcd-from-backup
+      name: etcd-data
+    - mountPath: /etc/kubernetes/pki/etcd   # это путь в контейнере etcd 
+      name: etcd-certs
+  hostNetwork: true
+  priorityClassName: system-node-critical
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  volumes:
+  - hostPath:
+      path: /etc/kubernetes/pki/etcd      # это путь в node controlplane каталоги при маунчены друг к другу 
+      type: DirectoryOrCreate
+    name: etcd-certs
+  - hostPath:
+      path: /var/lib/etcd-from-backup   # здесь меняем путь автоматом примунтится к pod путь /var/lib/etcd   !!!!!!
+      type: DirectoryOrCreate
+    name: etcd-data
+status: {}
+ 
+Посути просто поменяли путь больше ничего не трогали 
+    name: etcd-certs
+  - hostPath:
+      path: /var/lib/etcd-from-backup  # данный путь 
+
+ Нам надо поправить путь на самой node где лежит резервная копия, путь в pod etcd-controlplane  необязательно так как их name etcd-data связывает      
+
+
+3 Автоматом пересоздаст pod так как это статичный pod по которому идут проверки в директории где лежат все манифесты 
+ Итого не забудь пометить !!! 
+#####################################################################################################
+6
+1 kubectl config use-context cluster1  # подключаемся cluster1 аналог ssh 
+2 ssh cluster1  # в приниципе тоже самое что и выше 
+
+7 
+ssh cluster2-controlplane
+2 ps -ef | grep etcd
+/var/lib/etcd-data 
+
+# узнаем в какой директории лежит etcd-data 
+#####################################################################################################
+_svc_
+
+# пример изменений в svc 
+1 k edit svc mysql 
+2 k delete svc mysql  # удаляем старый svc 
+3 k create -f /tmp/kubectl-edit-1114185381.yaml  # запускаем новый svc
+
